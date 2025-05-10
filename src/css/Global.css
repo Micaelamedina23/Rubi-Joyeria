@@ -39,7 +39,6 @@
 
 .navbar-brand {
   font-weight: bold;
-  color: var(--primary-color) !important;
 }
 
 .navbar-nav .nav-link {
@@ -195,9 +194,6 @@ h2 {
   font-family: inherit;
 }
 
-.navbar, .sidebar, .btn {
-  border-radius: 8px !important;
-}
 
 input, select, .btn {
   padding: 10px 12px;

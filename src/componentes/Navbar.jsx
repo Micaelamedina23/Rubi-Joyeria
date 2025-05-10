@@ -27,6 +27,8 @@ const NavigationBar = ({ userRole, setUserRole }) => {
                             <Nav.Link as={Link} to="/usuarios">Usuarios</Nav.Link>
                             <Nav.Link as={Link} to="/stock">Stock</Nav.Link>
                             <Nav.Link as={Link} to="/ventas">Ventas</Nav.Link>
+                            <Nav.Link as={Link} to="/Reportes">Reportes</Nav.Link>
+                            <Nav.Link as={Link} to="/Caja">Caja</Nav.Link>
                         </Nav>
                         <Button variant="outline-dark" onClick={handleLogout}>Cerrar sesión</Button>
                     </Navbar.Collapse>

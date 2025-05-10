@@ -3,25 +3,26 @@ import bodyParser from "body-parser";
 import mysql from "mysql2";
 import cors from "cors";
 import nodemailer from "nodemailer";
+import multer from "multer";
 
 const app = express();
 const PORT = 5000;
 
-
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.json()); // ✅ Asegura que Express maneje JSON correctamente
+app.use(express.json());
+
+const upload = multer({ storage: multer.memoryStorage() }); // Para manejar archivos PDF
 
 // Configuración de la conexión a la base de datos
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "matute",
-    database: "Proyecto_para_recibirnos2",
+    password: "42206363Micaela",
+    database: "Proyecto_para_recibirnos3",
 });
 
-// Conexión a la base de datos
 db.connect((err) => {
     if (err) {
         console.error("Error al conectar a la base de datos:", err);
@@ -34,10 +35,41 @@ db.connect((err) => {
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: "tucorreo@gmail.com",
-        pass: "tucontraseña",
+        user: "micamedina2310@gmail.com",       // ✅ REEMPLAZAR
+        pass: "daow iads lons lnot",   // ✅ CLAVE DE APP, NO tu contraseña común
     },
 });
+
+// 🔹 Ruta para enviar factura PDF por Gmail
+app.post("/api/enviar-factura", upload.single("factura"), async (req, res) => {
+    const { email } = req.body;
+    const archivoPDF = req.file;
+
+    if (!archivoPDF || !email) {
+        return res.status(400).json({ message: "Faltan datos para enviar la factura." });
+    }
+
+    try {
+        await transporter.sendMail({
+            from: '"Joyería RUBÍ" <tucorreo@gmail.com>',
+            to: email,
+            subject: "Factura de compra - Joyería RUBÍ",
+            text: "Adjuntamos su factura. ¡Gracias por su compra!",
+            attachments: [
+                {
+                    filename: archivoPDF.originalname,
+                    content: archivoPDF.buffer,
+                },
+            ],
+        });
+
+        res.json({ message: "Factura enviada correctamente." });
+    } catch (error) {
+        console.error("Error al enviar factura:", error);
+        res.status(500).json({ message: "Error al enviar factura por Gmail." });
+    }
+});
+
 
 // 🔹 Middleware para verificar si un usuario es administrador
 const verificarAdmin = (req, res, next) => {
@@ -404,18 +436,17 @@ app.post("/api/compras", (req, res) => {
 // 🔹 Obtener el stock actual
 app.get("/api/stock", (req, res) => {
     const query = `
-        SELECT 
-            s.IDStock,
-            s.CodigoProducto,
-            s.Descripcion,
-            COALESCE(SUM(s.Cantidad), 0) AS Cantidad, 
-            CAST(s.PrecioCompra AS DECIMAL(10,2)) AS PrecioCompra,
-            CAST(s.PrecioVenta AS DECIMAL(10,2)) AS PrecioVenta,
-            MAX(c.DetallesProducto) AS DetallesProducto  
-        FROM Stock s
-        LEFT JOIN Compras c ON s.CodigoProducto = c.CodigoProducto
-        GROUP BY s.IDStock, s.CodigoProducto, s.Descripcion, s.PrecioCompra, s.PrecioVenta
-    `;
+    SELECT 
+        IDStock,
+        CodigoProducto,
+        Descripcion,
+        Cantidad, 
+        CAST(PrecioCompra AS DECIMAL(10,2)) AS PrecioCompra,
+        CAST(PrecioVenta AS DECIMAL(10,2)) AS PrecioVenta,
+        DetallesProducto
+    FROM Stock
+`;
+
 
     db.query(query, (err, results) => {
         if (err) {
@@ -429,10 +460,6 @@ app.get("/api/stock", (req, res) => {
         res.json(results);
     });
 });
-
-
-
-
 
 // 🔹 Ajustar stock manualmente (si necesitas modificarlo sin compra/venta)
 app.put("/api/stock/:codigoProducto", (req, res) => {
@@ -456,6 +483,190 @@ app.put("/api/stock/:codigoProducto", (req, res) => {
     });
 });
 
+// 🔹 Ruta para obtener todas las ventas con sus detalles
+app.get("/api/ventas", (req, res) => {
+    const query = `
+        SELECT v.IDVenta, v.Fecha, v.MetodoPago,
+               d.CodigoProducto, s.Descripcion, d.Cantidad, d.Subtotal
+        FROM Ventas v
+        JOIN DetalleVenta d ON v.IDVenta = d.IDVenta
+        JOIN Stock s ON d.CodigoProducto = s.CodigoProducto
+        ORDER BY v.Fecha DESC, v.IDVenta DESC;
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("❌ ERROR AL OBTENER VENTAS:", err.sqlMessage || err);
+            return res.status(500).json({ message: "Error al obtener ventas.", error: err.sqlMessage || err });
+        }
+
+        res.json(results);
+    });
+});
+
+app.post("/api/ventas", (req, res) => {
+    const { fecha, metodoPago, detalles } = req.body;
+  
+    if (!fecha || !metodoPago || !detalles || detalles.length === 0) {
+      return res.status(400).json({ message: "Todos los campos son obligatorios." });
+    }
+  
+    // 📃 Verificamos stock antes de insertar
+    const verificarStock = (callback) => {
+      const errores = [];
+      let pendientes = detalles.length;
+  
+      detalles.forEach((p) => {
+        const query = "SELECT Cantidad FROM Stock WHERE CodigoProducto = ?";
+        db.query(query, [p.CodigoProducto], (err, result) => {
+          if (err) {
+            errores.push(`Error al consultar stock de ${p.CodigoProducto}`);
+          } else if (!result.length || result[0].Cantidad < p.Cantidad) {
+            errores.push(
+              `Stock insuficiente para ${p.CodigoProducto}. Disponible: ${result[0]?.Cantidad ?? 0}, solicitado: ${p.Cantidad}`
+            );
+          }
+          pendientes--;
+          if (pendientes === 0) callback(errores);
+        });
+      });
+    };
+  
+    verificarStock((errores) => {
+      if (errores.length > 0) {
+        return res.status(400).json({ message: errores.join("\n") });
+      }
+  
+      const queryVenta = "INSERT INTO Ventas (Fecha, MetodoPago) VALUES (?, ?)";
+      db.query(queryVenta, [fecha, metodoPago], (err, result) => {
+        if (err) {
+          console.error("ERROR AL REGISTRAR VENTA:", err);
+          return res.status(500).json({ message: "Error al registrar la venta." });
+        }
+  
+        const idVenta = result.insertId;
+        const queryDetalle = "INSERT INTO DetalleVenta (IDVenta, CodigoProducto, Cantidad, Subtotal) VALUES ?";
+        const valores = detalles.map((p) => [idVenta, p.CodigoProducto, p.Cantidad, p.Subtotal]);
+  
+        db.query(queryDetalle, [valores], (err) => {
+          if (err) {
+            console.error("ERROR AL REGISTRAR DETALLE:", err);
+            return res.status(500).json({ message: "Error al registrar detalle de venta." });
+          }
+  
+          detalles.forEach((p) => {
+            const queryStock = "UPDATE Stock SET Cantidad = Cantidad - ? WHERE CodigoProducto = ?";
+            db.query(queryStock, [p.Cantidad, p.CodigoProducto], (err) => {
+              if (err) console.error("ERROR AL ACTUALIZAR STOCK:", err);
+            });
+          });
+  
+          res.json({ message: "Venta registrada con éxito.", idVenta });
+        });
+      });
+    });
+  });
+  
+
+// 🔹 Ruta para registrar un cambio de producto
+app.post("/api/cambios", (req, res) => {
+    const { fecha, productoDevuelto, productoNuevo } = req.body;
+
+    if (
+        !fecha ||
+        !productoDevuelto?.CodigoProducto ||
+        !productoDevuelto?.Cantidad ||
+        !productoNuevo?.CodigoProducto ||
+        !productoNuevo?.Cantidad
+    ) {
+        return res.status(400).json({ message: "Todos los campos son obligatorios." });
+    }
+
+    const queryDevolver = `
+        UPDATE Stock 
+        SET Cantidad = Cantidad + ? 
+        WHERE CodigoProducto = ?`;
+
+    const queryNuevo = `
+        UPDATE Stock 
+        SET Cantidad = Cantidad - ? 
+        WHERE CodigoProducto = ?`;
+
+    db.query(queryDevolver, [productoDevuelto.Cantidad, productoDevuelto.CodigoProducto], (err) => {
+        if (err) {
+            console.error("❌ Error al devolver producto:", err);
+            return res.status(500).json({ message: "Error al devolver producto." });
+        }
+
+        db.query(queryNuevo, [productoNuevo.Cantidad, productoNuevo.CodigoProducto], (err) => {
+            if (err) {
+                console.error("❌ Error al descontar nuevo producto:", err);
+                return res.status(500).json({ message: "Error al descontar nuevo producto." });
+            }
+
+            return res.json({ message: "✅ Cambio registrado correctamente." });
+        });
+    });
+});
+
+// 🔹 Ruta para obtener reporte de ventas por rango de fechas
+app.get("/api/reportes/ventas", (req, res) => {
+    const { fechaInicio, fechaFin } = req.query;
+
+    if (!fechaInicio || !fechaFin) {
+        return res.status(400).json({ message: "Debe proporcionar fechas de inicio y fin." });
+    }
+
+    const query = `
+        SELECT v.Fecha, d.Subtotal
+        FROM Ventas v
+        JOIN DetalleVenta d ON v.IDVenta = d.IDVenta
+        WHERE v.Fecha BETWEEN ? AND ?
+        ORDER BY v.Fecha ASC;
+    `;
+
+    db.query(query, [fechaInicio, fechaFin], (err, results) => {
+        if (err) {
+            console.error("❌ ERROR AL CONSULTAR REPORTE DE VENTAS:", err);
+            return res.status(500).json({ message: "Error al obtener reporte de ventas.", error: err });
+        }
+
+        res.json(results);
+    });
+});
+// Agregar en server.js
+
+// 🔹 RUTA para obtener todos los movimientos de caja
+app.get("/api/caja", (req, res) => {
+    const query = "SELECT * FROM Caja ORDER BY Fecha DESC";
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("❌ Error al obtener movimientos de caja:", err);
+            return res.status(500).json({ message: "Error del servidor al obtener movimientos de caja." });
+        }
+        res.json(results);
+    });
+});
+
+// 🔹 RUTA para registrar un retiro manual en caja (egreso)
+app.post("/api/caja", (req, res) => {
+    const { tipo, monto, descripcion } = req.body;
+
+    if (!tipo || !monto || isNaN(monto)) {
+        return res.status(400).json({ message: "Datos incompletos o incorrectos." });
+    }
+
+    const query = "INSERT INTO Caja (TipoMovimiento, Monto, Descripcion) VALUES (?, ?, ?)";
+    db.query(query, [tipo.toUpperCase(), parseFloat(monto), descripcion || null], (err, result) => {
+        if (err) {
+            console.error("❌ Error al registrar movimiento de caja:", err);
+            return res.status(500).json({ message: "Error al registrar el movimiento." });
+        }
+        res.json({ message: "✅ Movimiento registrado correctamente." });
+    });
+});
+
+  
 // Iniciar el servidor
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);

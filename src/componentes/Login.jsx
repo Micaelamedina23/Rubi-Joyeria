@@ -1,8 +1,12 @@
+
 import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserCircle } from "@fortawesome/free-solid-svg-icons";
 import "../css/Login.css";
+import logo from "../assets/logo_rubi.png"; // ✅ AGREGÁ ESTA LÍNEA
+import Swal from 'sweetalert2';
+
 
 const Login = ({ setUserRole }) => {
     const [email, setEmail] = useState("");
@@ -24,7 +28,15 @@ const Login = ({ setUserRole }) => {
             const data = await response.json();
     
             if (response.ok) {
-                alert(data.message);
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Bienvenido!',
+                    text: data.message,
+                    confirmButtonColor: '#8B1123',
+                    timer: 2000,
+                    showConfirmButton: false
+                  });
+                  
                 
                 // Guardar los datos del usuario en localStorage
                 localStorage.setItem("userRole", data.userRole.toString()); // Guardar rol
@@ -36,43 +48,54 @@ const Login = ({ setUserRole }) => {
                 // 🔹 Primero navega a /home
                 navigate("/home");
             } else {
-                alert(data.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al iniciar sesión',
+                    text: data.message,
+                    confirmButtonColor: '#8B1123'
+                  });
+                  
             }
         } catch (error) {
             console.error("Error al iniciar sesión:", error);
-            alert("Error al conectar con el servidor.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error del servidor',
+                text: 'No se pudo conectar con el servidor.',
+                confirmButtonColor: '#8B1123'
+              });
         } finally {
             setLoading(false);
         }
     };
     
     return (
-        <div className="login-container">
-            <form onSubmit={handleSubmit} className="login-form">
-                <div className="avatar">
-                    <FontAwesomeIcon icon={faUserCircle} size="5x" />
-                </div>
-                <h2>Iniciar Sesión</h2>
-                <input
-                    type="email"
-                    placeholder="Correo"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                <input
-                    type="password"
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                <button type="submit" className="login-button" disabled={loading}>
-                    {loading ? "Cargando..." : "Iniciar Sesión"}
-                </button>
-            </form>
-        </div>
-    );
-};
+            <div className="login-container">
+                <form onSubmit={handleSubmit} className="login-form">
+                    <div className="avatar">
+                        <img src={logo} alt="Logo Rubí" className="logo" />
+                    </div>
+                    <h2 className="login-titulo">Iniciar Sesión</h2>
+                    <input
+                        type="email"
+                        placeholder="Correo"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="Contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <button type="submit" className="login-button" disabled={loading}>
+                        {loading ? "Cargando..." : "Iniciar Sesión"}
+                    </button>
+                </form>
+            </div>
+        );
+    };
 
 export default Login;

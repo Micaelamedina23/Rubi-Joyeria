@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../css/Proveedores.css";
+import swal from 'sweetalert2';
+
 
 const Proveedores = () => {
     const [proveedores, setProveedores] = useState([]);
@@ -51,11 +53,25 @@ const Proveedores = () => {
             if (editando) {
                 // EDITAR proveedor
                 const response = await axios.put(`http://localhost:5000/api/proveedores/${idProveedor}`, proveedorData);
-                alert("Proveedor editado con éxito");
+                swal.fire({
+                    icon: 'info',
+                    title: 'Proveedor editado',
+                    text: 'Los datos fueron actualizados correctamente.',
+                    timer: 2000,
+                    showConfirmButton: false
+                  });
+                  
             } else {
                 // AGREGAR nuevo proveedor
                 const response = await axios.post("http://localhost:5000/api/proveedores", proveedorData);
-                alert("Proveedor agregado con éxito");
+                swal.fire({
+                    icon: 'success',
+                    title: '¡Proveedor agregado!',
+                    text: 'El proveedor se agregó correctamente.',
+                    timer: 2000,
+                    showConfirmButton: false
+                  });
+                  
             }
 
             fetchProveedores();
@@ -79,16 +95,39 @@ const Proveedores = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm(`¿Seguro que deseas eliminar el proveedor con ID: ${id}?`)) return;
-
+        const result = await swal.fire({
+          title: '¿Estás seguro?',
+          text: `Esta acción eliminará el proveedor con ID: ${id}`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar'
+        });
+      
+        if (!result.isConfirmed) return;
+      
         try {
-            await axios.delete(`http://localhost:5000/api/proveedores/${id}`);
-            alert("Proveedor eliminado con éxito");
-            fetchProveedores();
+          await axios.delete(`http://localhost:5000/api/proveedores/${id}`);
+          swal.fire({
+            icon: 'success',
+            title: 'Proveedor eliminado',
+            text: 'El proveedor fue eliminado exitosamente.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+      
+          fetchProveedores();
         } catch (error) {
-            alert("Error al eliminar proveedor: " + (error.response?.data?.message || "Error desconocido"));
+          swal.fire({
+            icon: 'error',
+            title: 'Error al eliminar',
+            text: error.response?.data?.message || "Error desconocido"
+          });
         }
-    };
+      };
+      
 
     const resetFormulario = () => {
         setIdProveedor(null);
@@ -101,24 +140,23 @@ const Proveedores = () => {
         setEditando(false);
         setMostrarFormulario(false);
     };
-
     return (
         <div id="proveedores-container" className="container mt-4">
-            {!editando && !mostrarFormulario && <h2>Gestión de Proveedores</h2>}
+            {!editando && !mostrarFormulario && <h2 className="proveedores-titulo">Gestion de Proveedores</h2>}
 
             {mostrarFormulario ? (
                 <div className="proveedores-form">
                     <h4 className="text-center">{editando ? "Editar Proveedor" : "Agregar Nuevo Proveedor"}</h4>
                     <form onSubmit={handleSave}>
                         <div className="mb-2">
-                            <label className="form-label">Código de Proveedor</label>
+                            <label className="form-label">Codigo de Proveedor</label>
                             <input
                                 type="text"
                                 className="form-control"
                                 value={codigoProveedor}
                                 onChange={(e) => setCodigoProveedor(e.target.value)}
                                 required
-                                disabled={editando} // 🔒 Deshabilitado al editar
+                                disabled={editando} 
                             />
                         </div>
                         <div className="mb-2">
@@ -126,11 +164,11 @@ const Proveedores = () => {
                             <input type="text" className="form-control" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
                         </div>
                         <div className="mb-2">
-                            <label className="form-label">Dirección</label>
+                            <label className="form-label">Direccion</label>
                             <input type="text" className="form-control" value={direccion} onChange={(e) => setDireccion(e.target.value)} required />
                         </div>
                         <div className="mb-2">
-                            <label className="form-label">Teléfono</label>
+                            <label className="form-label">Telefono</label>
                             <input type="text" className="form-control" value={telefono} onChange={(e) => setTelefono(e.target.value)} required />
                         </div>
                         <div className="mb-2">
@@ -142,7 +180,7 @@ const Proveedores = () => {
                             </select>
                         </div>
                         <div className="mb-2">
-                            <label className="form-label">Códigos (separados por comas)</label>
+                            <label className="form-label">Codigos (separados por comas)</label>
                             <input type="text" className="form-control" value={codigos} onChange={(e) => setCodigos(e.target.value)} required />
                         </div>
                         <button type="submit" className="btn btn-primary me-2">{editando ? "Guardar Cambios" : "Agregar Proveedor"}</button>
@@ -154,12 +192,12 @@ const Proveedores = () => {
                     <table className="table table-striped mt-4">
                         <thead>
                             <tr>
-                                <th>Código Proveedor</th>
+                                <th>Codigo Proveedores</th>
                                 <th>Nombre</th>
-                                <th>Dirección</th>
-                                <th>Teléfono</th>
+                                <th>Direccion</th>
+                                <th>Telefono</th>
                                 <th>Tipo</th>
-                                <th>Códigos</th>
+                                <th>Codigos</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>

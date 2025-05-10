@@ -9,6 +9,9 @@ import NavigationBar from "./componentes/Navbar";
 import Compras from "./componentes/Compras"; 
 import Stock from "./componentes/Stock"; // ✅ Nuevo componente de Stock
 import Ventas from "./componentes/Ventas"; // ✅ Nuevo componente de Ventas
+import HistorialVentas from "./componentes/HistorialVentas";
+import Reportes from "./componentes/Reportes"
+import Caja from "./componentes/Caja"
 
 const App = () => {
     const [userRole, setUserRole] = useState(null);
@@ -37,6 +40,10 @@ const MainContent = ({ userRole, setUserRole }) => {
     <Route path="/compras" element={<Compras />} />
     <Route path="/stock" element={<Stock />} />
     <Route path="/ventas" element={<Ventas />} /> {/* ✅ Ruta correcta */}
+    <Route path="/reportes" element={<Reportes />} /> {/* ✅ Ruta correcta */}
+    <Route path="/caja" element={<Caja />} /> {/* ✅ Ruta correcta */}
+
+
 </Routes>
 
             </div>

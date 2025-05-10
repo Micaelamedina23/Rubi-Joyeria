@@ -8,27 +8,27 @@
 
 /* Estilo del Navbar */
 .navbar-content {
-    background-color: #f8f9fa; /* Fondo claro, puedes cambiarlo */
+    background-color: #526D82; /* Fondo claro, puedes cambiarlo */
     padding: 10px 0;
 }
 
 /* Enlaces del Navbar */
 .navbar-content .nav-link {
-    color: #333; /* Color de texto de los enlaces */
+    color: #ffff; /* Color de texto de los enlaces */
     font-weight: bold;
 }
 
 .navbar-content .nav-link:hover {
-    color: #87c6dd; /* Color al pasar el mouse */
+    color: #27374D !important; /* Color al pasar el mouse */
 }
 
 /* Botón de cerrar sesión */
 .navbar-content .btn-outline-dark {
-    border-color: #333;
-    color: #333;
+    border-color: #ffff;
+    color: #fff;
 }
 
 .navbar-content .btn-outline-dark:hover {
-    background-color: #333;
-    color: #fff;
+    background-color: #fff;
+    color: #27374D;
 }

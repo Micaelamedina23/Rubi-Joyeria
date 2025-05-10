@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import "../css/Compras.css"; // Importamos el CSS separado
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; // Íconos para acciones
+import Swal from 'sweetalert2';
+
 
 const Compras = () => {
     const [compras, setCompras] = useState([]); // Estado para almacenar compras
@@ -78,7 +80,15 @@ const Compras = () => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Error al registrar compra");
     
-            alert(data.message);
+            Swal.fire({
+                icon: 'success',
+                title: '¡Compra registrada!',
+                text: data.message || 'La compra fue registrada correctamente.',
+                confirmButtonColor: '#8B1123',
+                timer: 2000,
+                showConfirmButton: false
+              });
+             
             obtenerCompras(); // Recargar la lista de compras
     
             // Vaciar los campos del formulario
@@ -96,6 +106,12 @@ const Compras = () => {
             setMostrarFormulario(false);
         } catch (error) {
             console.error("❌ Error en el registro de compra:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al registrar compra',
+                text: error.message || 'Ocurrió un problema al registrar la compra.',
+                confirmButtonColor: '#8B1123'
+              });
         }
     };
 

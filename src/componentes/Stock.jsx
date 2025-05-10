@@ -39,7 +39,6 @@ const Stock = () => {
             <table className="table table-striped">
     <thead>
         <tr>
-            <th>#</th>
             <th>Código</th>
             <th>Detalles</th>
             <th>P. Venta</th>
@@ -53,7 +52,8 @@ const Stock = () => {
                 <tr key={index}>
                     <td>{index + 1}</td>
                     <td>{s.CodigoProducto}</td>
-                    <td>{s.Descripcion || "Sin detalles"}</td>
+                    <td>{s.DetallesProducto || "Sin detalles"}</td>
+
                     <td>
                         ${Number(s.PrecioVenta.replace(/,/g, "")).toFixed(2)}
                     </td>

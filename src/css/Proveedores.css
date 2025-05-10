@@ -31,7 +31,7 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: #f07795;
+    background-color: #526D82;
     color: white;
     border: none;
     width: 60px;
@@ -48,7 +48,7 @@
 }
 
 .fab-button:hover {
-    background-color: #fb7e8d;
+    background-color: #DDE6ED;
 }
 /* 📌 Ajustar el tamaño del formulario */
 .proveedores-form {
@@ -82,7 +82,7 @@
 }
 /* 📌 Botón Editar */
 .btn-editar {
-    background-color: #ff0772 !important; /* Amarillo Bootstrap */
+    background-color: #9DB2BF!important; /* Amarillo Bootstrap */
     color: #212529 !important; /* Texto oscuro */
     border: none !important;
     padding: 8px 12px !important;
@@ -108,5 +108,8 @@
 }
 
 .btn-eliminar:hover {
-    background-color: #f36775 !important; /* Rojo más oscuro */
+    background-color: #526D82 !important; /* Rojo más oscuro */
+}
+.proveedores-titulo {
+    color: #080808;
 }

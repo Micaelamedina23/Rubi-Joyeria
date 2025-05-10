@@ -4,6 +4,8 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import "../css/Usuarios.css"; 
+import Swal from 'sweetalert2';
+
 
 const Usuarios = () => {
     const [usuarios, setUsuarios] = useState([]);
@@ -33,7 +35,12 @@ const Usuarios = () => {
         e.preventDefault();
 
         if (!nombre || !correo || !contraseña) {
-            alert("Todos los campos son obligatorios");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Todos los campos son obligatorios.',
+                confirmButtonColor: '#8B1123'
+              });
             return;
         }
 
@@ -45,7 +52,15 @@ const Usuarios = () => {
                 role: rol,
             });
 
-            alert("Usuario agregado correctamente");
+            Swal.fire({
+                icon: 'success',
+                title: 'Usuario agregado',
+                text: 'El usuario fue registrado correctamente.',
+                confirmButtonColor: '#8B1123',
+                timer: 2000,
+                showConfirmButton: false
+              });
+          
             resetFormulario();
             fetchUsuarios();
         } catch (error) {
@@ -55,57 +70,96 @@ const Usuarios = () => {
     };
 
     const handleDeleteUser = async (id) => {
-        if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
-
+        const confirmacion = await Swal.fire({
+          title: '¿Estás seguro?',
+          text: 'Esta acción eliminará al usuario permanentemente.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#8B1123',
+          cancelButtonColor: '#aaa',
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar'
+        });
+      
+        if (!confirmacion.isConfirmed) return;
+      
         try {
-            const userRole = localStorage.getItem("userRole") || "2";
-
-            const response = await axios.delete(`http://localhost:5000/api/usuarios/${id}`, {
-                headers: {
-                    "user-role": userRole,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            alert("Usuario eliminado correctamente");
-            fetchUsuarios();
+          const userRole = localStorage.getItem("userRole") || "2";
+      
+          const response = await axios.delete(`http://localhost:5000/api/usuarios/${id}`, {
+            headers: {
+              "user-role": userRole,
+              "Content-Type": "application/json",
+            },
+          });
+      
+          Swal.fire({
+            icon: 'success',
+            title: 'Usuario eliminado',
+            text: 'El usuario fue eliminado correctamente.',
+            confirmButtonColor: '#8B1123',
+            timer: 2000,
+            showConfirmButton: false
+          });
+      
+          fetchUsuarios();
         } catch (error) {
-            console.error("Error al eliminar usuario:", error.response ? error.response.data : error);
-            alert("Error al eliminar usuario: " + (error.response ? error.response.data.message : ""));
+          console.error("Error al eliminar usuario:", error.response ? error.response.data : error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al eliminar',
+            text: error.response?.data?.message || 'No se pudo eliminar el usuario.',
+            confirmButtonColor: '#8B1123'
+          });
         }
-    };
+      };
+      
 
     const handleEditUser = async (e) => {
         e.preventDefault();
-
+      
         try {
-            const userRole = localStorage.getItem("userRole") || "2";
-
-            let userData = {
-                Nombre: nombre,
-                Correo: correo,
-                IDRol: parseInt(rol, 10),
-            };
-
-            if (contraseña.trim() !== "") {
-                userData.Contraseña = contraseña;
-            }
-
-            await axios.put(`http://localhost:5000/api/usuarios/${idUsuario}`, userData, {
-                headers: {
-                    "user-role": userRole,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            alert("Usuario actualizado correctamente");
-            resetFormulario();
-            fetchUsuarios();
+          const userRole = localStorage.getItem("userRole") || "2";
+      
+          let userData = {
+            Nombre: nombre,
+            Correo: correo,
+            IDRol: parseInt(rol, 10),
+          };
+      
+          if (contraseña.trim() !== "") {
+            userData.Contraseña = contraseña;
+          }
+      
+          await axios.put(`http://localhost:5000/api/usuarios/${idUsuario}`, userData, {
+            headers: {
+              "user-role": userRole,
+              "Content-Type": "application/json",
+            },
+          });
+      
+          Swal.fire({
+            icon: 'success',
+            title: 'Usuario actualizado',
+            text: 'Los datos del usuario fueron modificados correctamente.',
+            confirmButtonColor: '#8B1123',
+            timer: 2000,
+            showConfirmButton: false
+          });
+      
+          resetFormulario();
+          fetchUsuarios();
         } catch (error) {
-            console.error("Error al actualizar usuario:", error.response ? error.response.data : error);
-            alert("Error al actualizar usuario");
+          console.error("Error al actualizar usuario:", error.response ? error.response.data : error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al actualizar',
+            text: 'No se pudo actualizar el usuario.',
+            confirmButtonColor: '#8B1123'
+          });
         }
-    };
+      };
+      
 
     const iniciarEdicion = (usuario) => {
         setIdUsuario(usuario.IDUsuario);
@@ -128,7 +182,7 @@ const Usuarios = () => {
 
     return (
         <div id="usuarios-container" className="container mt-4 position-relative">
-            <h2>Gestión de Usuarios</h2>
+            <h2 className="usuarios-titulo">Gestión de Usuarios</h2>
     
             {mostrarFormulario ? (
                 <div className="card p-4">
